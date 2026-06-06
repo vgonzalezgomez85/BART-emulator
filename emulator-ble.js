@@ -72,9 +72,10 @@ const rxCharacteristic = new bleno.Characteristic({
 bleno.on('stateChange', (state) => {
   console.log('[bleno] estado:', state);
   if (state === 'poweredOn') {
-    // Anunciamos SOLO el nombre (cabe en 31 bytes); el central escanea por
-    // "BART_MST" y descubre el NUS tras conectar. Evita el límite del adv packet.
-    bleno.startAdvertising(NAME, [], (err) => { if (err) console.error('[bleno] adv error:', err); });
+    // Anunciamos el NOMBRE + el servicio NUS. Así SlotTime (noble) lo encuentra
+    // filtrando por el UUID del servicio, sin depender del nombre (que macOS
+    // cachea). El nombre cabe en scan-response. flags(3)+uuid128(18)=21 ≤ 31.
+    bleno.startAdvertising(NAME, [NUS_SERVICE], (err) => { if (err) console.error('[bleno] adv error:', err); });
   } else {
     bleno.stopAdvertising();
   }
