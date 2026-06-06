@@ -1,0 +1,14 @@
+{
+  "name": "bart-emulator",
+  "version": "0.1.0",
+  "description": "BART (BLE Advanced Race Timer) emulator + bridge — banco de pruebas para SlotTime",
+  "scripts": {
+    "tcp": "node emulator.js",
+    "ble": "node emulator-ble.js",
+    "bridge": "node bridge.js",
+    "test-client": "node test-client.js"
+  },
+  "optionalDependencies": {
+    "@abandonware/bleno": "^0.6.0"
+  }
+}

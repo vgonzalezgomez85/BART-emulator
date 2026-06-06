@@ -26,6 +26,8 @@ Bluetooth real es un módulo enchufable que se añade al final, cuando haya hard
 |---|---|
 | `lib/protocol.js` | Protocolo binario: CRC-8 (poly 0x07), builders (LAP/ACK/STATUS), `FrameParser` con resync por byte `0xA5` + validación CRC. Compartido por emulador y puente. |
 | `emulator.js` | **BART_MST virtual** sobre TCP `:9300`. Máquina de estados FREE/RUN/PAUSE/STOP, gating de notificaciones, filtro MinLap, ACKs. Genera vueltas sintéticas con jitter. |
+| `emulator-ble.js` | **BART_MST por BLE real** (periférico GATT con `bleno`, Nordic UART Service). Para una VM Ubuntu / Raspberry Pi con radio BLE → SlotTime lo ve como un BART real. Ver `BLE-SETUP.md`. |
+| `lib/master.js` | Máquina de estados del Master, **compartida** por el emulador TCP y el BLE (solo cambia el transporte). |
 | `test-client.js` | "Phone" mínima de prueba: conecta, activa notificaciones, START, imprime vueltas. |
 | `bridge.js` | **Puente** = lado BART de SlotTime. Decodifica el stream y emite **un JSON por cruce**. Transporte enchufable (`tcp` hoy, `ble` pendiente). Detección de huecos por contador de vueltas. |
 | `scenarios/RegistroCarrera.txt` | Captura real de una carrera DS-300 (para reusarla como guion realista, pendiente de cablear). |
