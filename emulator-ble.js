@@ -50,6 +50,7 @@ const txCharacteristic = new bleno.Characteristic({
     console.log(`[+] central suscrito a TX (notify on, MTU payload=${maxValueSize})`);
     txUpdate = updateValueCallback;
     master.notify = true;                  // el canal está listo → fluyen LAP/STATUS
+    master.resumeLanes();                  // si veníamos de RUN (reconexión), reanuda las vueltas
   },
   onUnsubscribe() {
     console.log('[-] central desuscrito de TX');
