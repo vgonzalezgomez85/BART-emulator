@@ -9,7 +9,8 @@
 //    BART_LANES=4 BART_PORT=9300 node emulator.js
 // ============================================================================
 
-const net = require('net');
+const net  = require('net');
+const path = require('path');
 const P = require('./lib/protocol');
 const { Master } = require('./lib/master');
 
@@ -18,10 +19,24 @@ const PORT = Number(process.env.BART_PORT || 9300);
 const NUM_LANES = Number(process.env.BART_LANES || 4);
 const DEFAULT_MINLAP = 2000; // ms
 
+// Escenario: 'synthetic' (vueltas aleatorias) o 'replay' (captura real).
+//   BART_SCENARIO=replay BART_REPLAY=scenarios/RegistroCarrera.txt node emulator.js
+const { replayEvents, replayLanes } = loadScenario();
+function loadScenario() {
+  if ((process.env.BART_SCENARIO || 'synthetic') !== 'replay') return {};
+  const file = process.env.BART_REPLAY || path.join(__dirname, 'scenarios', 'RegistroCarrera.txt');
+  const { parseCapture } = require('./lib/replay');
+  const r = parseCapture(file);
+  console.log(`[replay] ${r.events.length} cruces, ${r.lanes} carriles desde ${file}${r.error ? ' (ERROR: ' + r.error + ')' : ''}`);
+  return { replayEvents: r.events, replayLanes: r.lanes };
+}
+
 // ---- TCP transport --------------------------------------------------------
 let socket = null;
 function send(buf) { if (socket && !socket.destroyed) socket.write(buf); }
-const master = new Master(send, (...a) => console.log(...a), { lanes: NUM_LANES, minlap: DEFAULT_MINLAP });
+const master = new Master(send, (...a) => console.log(...a), {
+  lanes: replayLanes || NUM_LANES, minlap: DEFAULT_MINLAP, replayEvents,
+});
 
 const server = net.createServer((s) => {
   console.log(`\n[+] phone connected ${s.remoteAddress}:${s.remotePort}`);
@@ -49,6 +64,6 @@ const server = net.createServer((s) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`BART Master emulated (BART_MST) listening on ${HOST}:${PORT}`);
-  console.log(`Lanes: ${NUM_LANES}  |  MinLap: ${master.minlap}ms`);
+  console.log(`Lanes: ${master.numLanes}  |  MinLap: ${master.minlap}ms${replayEvents ? '  |  REPLAY' : ''}`);
   console.log('Waiting for SlotTime (or test-client.js) to connect...');
 });
