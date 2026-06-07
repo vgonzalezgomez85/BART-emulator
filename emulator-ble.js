@@ -14,12 +14,22 @@
 // ============================================================================
 
 const bleno = require('@abandonware/bleno');
+const path  = require('path');
 const P = require('./lib/protocol');
 const { Master } = require('./lib/master');
 
 const NAME      = process.env.BART_NAME   || 'BART_MST';
 const NUM_LANES = Number(process.env.BART_LANES  || 4);
 const MINLAP    = Number(process.env.BART_MINLAP || 2000);
+
+// Escenario: synthetic | replay (captura real). BART_SCENARIO=replay
+const { replayEvents, replayLanes } = (() => {
+  if ((process.env.BART_SCENARIO || 'synthetic') !== 'replay') return {};
+  const file = process.env.BART_REPLAY || path.join(__dirname, 'scenarios', 'RegistroCarrera.txt');
+  const r = require('./lib/replay').parseCapture(file);
+  console.log(`[replay] ${r.events.length} cruces, ${r.lanes} carriles desde ${file}${r.error ? ' (ERROR: ' + r.error + ')' : ''}`);
+  return { replayEvents: r.events, replayLanes: r.lanes };
+})();
 
 // Nordic UART Service (UUID 128-bit, sin guiones para bleno)
 const NUS_SERVICE = '6e400001b5a3f393e0a9e50e24dcca9e';
@@ -29,7 +39,7 @@ const NUS_TX      = '6e400003b5a3f393e0a9e50e24dcca9e'; // master → phone (not
 // ── Master + transporte BLE (notify) ────────────────────────────────────────
 let txUpdate = null;                       // updateValueCallback cuando hay suscripción
 function send(buf) { if (txUpdate) txUpdate(Buffer.from(buf)); }
-const master = new Master(send, (...a) => console.log(...a), { lanes: NUM_LANES, minlap: MINLAP });
+const master = new Master(send, (...a) => console.log(...a), { lanes: replayLanes || NUM_LANES, minlap: MINLAP, replayEvents });
 
 // Parser de comandos entrantes (Phone → Master). Cada write puede traer un
 // comando; el FrameParser resincroniza por 0xA5 y valida CRC igual que en TCP.
@@ -84,7 +94,7 @@ bleno.on('stateChange', (state) => {
 
 bleno.on('advertisingStart', (err) => {
   if (err) { console.error('[bleno] advertisingStart error:', err); return; }
-  console.log(`[bleno] anunciando como "${NAME}"  |  Lanes: ${NUM_LANES}  |  MinLap: ${MINLAP}ms`);
+  console.log(`[bleno] anunciando como "${NAME}"  |  Lanes: ${master.numLanes}  |  MinLap: ${MINLAP}ms${replayEvents ? '  |  REPLAY' : ''}`);
   bleno.setServices([
     new bleno.PrimaryService({ uuid: NUS_SERVICE, characteristics: [rxCharacteristic, txCharacteristic] }),
   ], (err2) => {

@@ -28,6 +28,16 @@ Bluetooth real es un módulo enchufable que se añade al final, cuando haya hard
 | `emulator.js` | **BART_MST virtual** sobre TCP `:9300`. Máquina de estados FREE/RUN/PAUSE/STOP, gating de notificaciones, filtro MinLap, ACKs. Genera vueltas sintéticas con jitter. |
 | `emulator-ble.js` | **BART_MST por BLE real** (periférico GATT con `bleno`, Nordic UART Service). Para una VM Ubuntu / Raspberry Pi con radio BLE → SlotTime lo ve como un BART real. Ver `BLE-SETUP.md`. |
 | `lib/master.js` | Máquina de estados del Master, **compartida** por el emulador TCP y el BLE (solo cambia el transporte). |
+| `lib/replay.js` | Parser de capturas DS-300 (`scenarios/RegistroCarrera.txt`) → timeline de cruces, para reproducir una carrera REAL como vueltas BART. |
+
+### Escenarios
+Por defecto el emulador genera vueltas **sintéticas** (aleatorias con jitter). Con
+`BART_SCENARIO=replay` reproduce una **captura real** (tiempos reales de una carrera):
+```bash
+BART_SCENARIO=replay node emulator.js          # TCP, usa scenarios/RegistroCarrera.txt
+BART_SCENARIO=replay node emulator-ble.js       # BLE
+BART_SCENARIO=replay BART_REPLAY=/ruta/otra.txt node emulator.js
+```
 | `test-client.js` | "Phone" mínima de prueba: conecta, activa notificaciones, START, imprime vueltas. |
 | `bridge.js` | **Puente** = lado BART de SlotTime. Decodifica el stream y emite **un JSON por cruce**. Transporte enchufable (`tcp` hoy, `ble` pendiente). Detección de huecos por contador de vueltas. |
 | `scenarios/RegistroCarrera.txt` | Captura real de una carrera DS-300 (para reusarla como guion realista, pendiente de cablear). |
